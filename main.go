@@ -27,7 +27,7 @@ func (ctx *httpHeadersHttpContext) OnHttpRequestHeaders(numHeaders int, _ bool) 
 			proxywasm.LogErrorf("failed to get request headers with '%v'", err)
 			return types.ActionContinue
 		}
-		proxywasm.LogInfof("tutut request headers: '%+v'", headers)
+		proxywasm.LogInfof("On request headers: '%+v'", headers)
 	}
 
 	return types.ActionContinue
@@ -40,5 +40,5 @@ func (ctx *httpHeadersHttpContext) OnLog() {
 		proxywasm.LogCritical(err.Error())
 		return
 	}
-	proxywasm.LogInfof("tatat OnLog: :path = %s", hdr)
+	proxywasm.LogInfof("OnLog: :path = %s", hdr)
 }
