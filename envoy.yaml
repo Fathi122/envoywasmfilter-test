@@ -1,0 +1,58 @@
+static_resources:
+  listeners:
+    - name: listener_0
+      address:
+        socket_address: { address: 0.0.0.0, port_value: 8090 }
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                codec_type: AUTO
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: local_service
+                      domains: ["*"]
+                      retry_policy: { retry_on: "5xx", num_retries : 3}
+                      routes:
+                        - match: { prefix: "/" }
+                          route: { cluster: svc_httpheaderslogs }
+                http_filters:
+                  - name: envoy.filters.http.wasm
+                    typed_config:
+                      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+                      type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                      value:
+                        config:
+                          name: "my_plugin"
+                          root_id: "my_root_id"
+                          vm_config:
+                            vm_id: "my_vm_id"
+                            runtime: "envoy.wasm.runtime.v8"
+                            code:
+                              local:
+                                filename: "http-headers-logs.wasm"
+                            allow_precompiled: true
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+                      type_url: type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+    - name: svc_httpheaderslogs
+      connect_timeout: 0.25s
+      type: STATIC
+      lb_policy: ROUND_ROBIN
+      type: LOGICAL_DNS
+      load_assignment:
+        cluster_name: svc_httpheaderslogs
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: svc_httpheaderslogs
+                      port_value: 8080
+
