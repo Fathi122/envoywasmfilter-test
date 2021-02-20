@@ -1,0 +1,20 @@
+FROM tinygo/tinygo:0.16.0 AS builder
+
+RUN apt-get update && apt-get install -y git
+
+ENV GOPATH=/go
+RUN go get -u github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm || exit 0
+
+COPY main.go .
+COPY envoy.yaml .
+
+RUN tinygo build -o ./http-headers-logs.wasm -scheduler=none -target=wasi ./main.go
+
+FROM envoyproxy/envoy-dev:eb99bfc13150fe57405138af3a6f1751fad7d8e2
+
+COPY --from=builder envoy.yaml /envoy.yaml
+COPY --from=builder http-headers-logs.wasm /http-headers-logs.wasm
+
+RUN chmod go+r /envoy.yaml && \
+    chmod go+r /http-headers-logs.wasm && \
+    mkdir logs && chmod ugo+rw logs
