@@ -15,10 +15,9 @@ static_resources:
                   virtual_hosts:
                     - name: local_service
                       domains: ["*"]
-                      retry_policy: { retry_on: "5xx", num_retries : 3}
                       routes:
                         - match: { prefix: "/" }
-                          route: { cluster: svc_httpheaderslogs }
+                          route: { cluster: svc_httpheaderslogs,retry_policy: { retry_on: "5xx", num_retries : 9,retriable_status_codes: [500]} }
                 http_filters:
                   - name: envoy.filters.http.wasm
                     typed_config:
