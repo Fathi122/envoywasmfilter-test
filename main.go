@@ -5,22 +5,37 @@ import (
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
 )
 
+// pluginContext
+type pluginContext struct {
+	// Embed the default plugin context here,
+	types.DefaultPluginContext
+}
+
+// Override types.DefaultPluginContext.
+func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
+	return &httpHeadersHttpContext{contextID: contextID}
+}
+
+// vmContext
+type vmContext struct {
+	// Embed the default VM context here,
+	types.DefaultVMContext
+}
+
+// Override types.DefaultVMContext.
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	return &pluginContext{}
+}
+
+// httpHeadersHttpContext
 type httpHeadersHttpContext struct {
-	proxywasm.DefaultHttpContext
-}
-
-func main() {
-	// set http context
-	proxywasm.SetNewHttpContext(newHttpContext)
-}
-
-func newHttpContext(uint32, uint32) proxywasm.HttpContext {
-	return &httpHeadersHttpContext{}
+	// Embed the default http context here,
+	types.DefaultHttpContext
+	contextID uint32
 }
 
 // on Http Request Handler
 func (ctx *httpHeadersHttpContext) OnHttpRequestHeaders(numHeaders int, _ bool) types.Action {
-
 	if numHeaders > 0 {
 		headers, err := proxywasm.GetHttpRequestHeaders()
 		if err != nil {
@@ -29,7 +44,6 @@ func (ctx *httpHeadersHttpContext) OnHttpRequestHeaders(numHeaders int, _ bool) 
 		}
 		proxywasm.LogInfof("On request headers: '%+v'", headers)
 	}
-
 	return types.ActionContinue
 }
 
@@ -41,4 +55,8 @@ func (ctx *httpHeadersHttpContext) OnLog() {
 		return
 	}
 	proxywasm.LogInfof("OnLog: :path = %s", hdr)
+}
+
+func main() {
+	proxywasm.SetVMContext(&vmContext{})
 }
