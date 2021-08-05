@@ -1,12 +1,14 @@
-FROM tinygo/tinygo:0.16.0 AS builder
+FROM tinygo/tinygo:0.19.0 AS builder
 
 RUN apt-get update && apt-get install -y git
 
 ENV GOPATH=/go
-RUN go get -u github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm || exit 0
 
 COPY main.go .
 COPY envoy.yaml .
+
+# generate a go.mod for getting proxy-wasm sdk dependency
+RUN go mod init test && go mod tidy
 
 RUN tinygo build -o ./http-headers-logs.wasm -scheduler=none -target=wasi ./main.go
 
