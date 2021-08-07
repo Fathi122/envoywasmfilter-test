@@ -1,4 +1,4 @@
-FROM golang:1.15.8-alpine3.12
+FROM golang:alpine
 ## We create an /app directory within our
 ## image that will hold our application source
 ## files
