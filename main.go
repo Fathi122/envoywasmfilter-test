@@ -47,6 +47,26 @@ func (ctx *httpHeadersHttpContext) OnHttpRequestHeaders(numHeaders int, _ bool) 
 	return types.ActionContinue
 }
 
+// on Http Response Handler
+func (ctx *httpHeadersHttpContext) OnHttpResponseHeaders(numHeaders int, _ bool) types.Action {
+	if numHeaders > 0 {
+		// AddHttpResponseHeader adds a custom response header.
+		err := proxywasm.AddHttpResponseHeader("customheader", "dummyheader")
+		if err != nil {
+			proxywasm.LogCritical("failed to set response header: test")
+		} else {
+			proxywasm.LogInfof("On response headers adding new Header")
+		}
+		headers, err := proxywasm.GetHttpResponseHeaders()
+		if err != nil {
+			proxywasm.LogErrorf("failed to get responseheaders with '%v'", err)
+			return types.ActionContinue
+		}
+		proxywasm.LogInfof("On response headers: '%+v'", headers)
+	}
+	return types.ActionContinue
+}
+
 // on Log Handler
 func (ctx *httpHeadersHttpContext) OnLog() {
 	hdr, err := proxywasm.GetHttpRequestHeader(":path")
